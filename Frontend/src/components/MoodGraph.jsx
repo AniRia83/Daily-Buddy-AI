@@ -8,8 +8,12 @@ export default function MoodGraph() {
 
   useEffect(() => {
     async function load() {
-      const result = await analyzeMood();
-      setMoods(result.weekly_moods);
+      try {
+        const result = await analyzeMood();
+        setMoods(result.weekly_moods);
+      } catch (e) {
+        console.error("Mood analysis failed:", e);
+      }
     }
     load();
   }, []);
@@ -20,6 +24,7 @@ export default function MoodGraph() {
       {
         label: "Mood Score",
         data: moods.map((m) => m.score),
+        borderWidth: 2,
       },
     ],
   };

@@ -1,31 +1,23 @@
 import { useState } from "react";
-
-const API_BASE = "https://ai-dailybuddy-backend.onrender.com";
+import { sendJournalEntry } from "../services/api";   // ✅ FIXED IMPORT
 
 export default function JournalInput({ onEntrySaved }) {
   const [entry, setEntry] = useState("");
 
   async function saveEntry() {
-    if (!entry.trim()) return alert("Write something first!");
-
     try {
-      const res = await fetch(`${API_BASE}/add_entry`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entry }),
-      });
-
-      const data = await res.json();
+      const data = await sendJournalEntry(entry);   // ✅ FIXED FUNCTION CALL
 
       onEntrySaved({
         text: entry,
-        date: new Date().toLocaleString(),
-        mood: data.mood_score,  // optional
+        summary: data.summary,
+        sentiment: data.sentiment,
       });
 
-      setEntry("");
+      setEntry(""); // reset input
     } catch (error) {
       console.error("Saving error:", error);
+      alert("Error saving entry.");
     }
   }
 

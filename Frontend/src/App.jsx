@@ -1,13 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import JournalInput from "./components/JournalInput";
 import EntryList from "./components/EntryList";
 import MoodGraph from "./components/MoodGraph";
+import { getEntries } from "./services/api";
 
 export default function App() {
   const [entries, setEntries] = useState([]);
 
-  function onEntrySaved(entry) {
-    setEntries([entry, ...entries]);
+  // Load entries from backend on startup
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getEntries();
+        setEntries(data.reverse()); // newest first
+      } catch (error) {
+        console.error("Failed to load entries:", error);
+      }
+    }
+    load();
+  }, []);
+
+  // Add new entry to top
+  function onEntrySaved(newEntry) {
+    setEntries((prev) => [newEntry, ...prev]);
   }
 
   return (
@@ -18,7 +33,7 @@ export default function App() {
 
       <EntryList entries={entries} />
 
-      <MoodGraph /> 
+      <MoodGraph entries={entries} />
     </div>
   );
 }
