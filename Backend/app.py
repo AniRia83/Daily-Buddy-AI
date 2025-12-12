@@ -1,13 +1,12 @@
 import json
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from services.summarizer import summarize_text
 from services.sentiment import analyze_sentiment
 from services.embeddings import get_embedding, save_embedding, search_similar
-from services.mood import analyze_mood  # <-- REAL mood analyzer function
-
-from datetime import datetime
+from services.mood import analyze_mood  # actual mood analyzer
 
 JOURNAL_FILE = "data/journal_entries.json"
 
@@ -21,18 +20,19 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "https://daily-buddy-ai.vercel.app",
-        "https://daily-buddy-ai.onrender.com"
+        "https://daily-buddy-ai.onrender.com",
     ],
-    allow_credentials=False,
+    allow_credentials=True,        # <-- REQUIRED FIX
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# Ensure data folder + file exists
-import os
+# -------------------------
+# Ensure data folder + file
+# -------------------------
 if not os.path.exists("data"):
     os.makedirs("data")
+
 if not os.path.exists(JOURNAL_FILE):
     with open(JOURNAL_FILE, "w") as f:
         json.dump([], f)
@@ -49,6 +49,7 @@ def save_entries(data):
     with open(JOURNAL_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
+
 # -------------------------
 # API Routes
 # -------------------------
@@ -59,7 +60,7 @@ def add_entry(entry: dict):
 
     summary = summarize_text(text)
     sentiment = analyze_sentiment(text)
-    mood_score = analyze_mood(text)  # <-- FIXED: now calls correct function
+    mood_score = analyze_mood(text)
 
     entries = load_entries()
     entry_id = len(entries) + 1
@@ -82,7 +83,7 @@ def add_entry(entry: dict):
         "message": "Entry added successfully!",
         "summary": summary,
         "sentiment": sentiment,
-        "mood": mood_score
+        "mood": mood_score,
     }
 
 
@@ -99,10 +100,10 @@ def get_entries():
 
 
 # -------------------------
-# Mood analysis for graph
+# Mood analysis chart
 # -------------------------
 @app.get("/mood")
-def get_mood_graph():   # <-- FIXED: renamed to avoid overriding
+def get_mood_graph():
     entries = load_entries()
 
     mood_map = {
@@ -125,6 +126,4 @@ def get_mood_graph():   # <-- FIXED: renamed to avoid overriding
 
 @app.get("/")
 def home():
-    return {
-        "message": "DailyBuddy Backend is Running!"
-    }
+    return {"message": "DailyBuddy Backend is Running!"}
