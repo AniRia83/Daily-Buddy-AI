@@ -28,6 +28,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Ensure data folder + file exists
+import os
+if not os.path.exists("data"):
+    os.makedirs("data")
+if not os.path.exists(JOURNAL_FILE):
+    with open(JOURNAL_FILE, "w") as f:
+        json.dump([], f)
+
+
 # -------------------------
 # Helper functions
 # -------------------------
