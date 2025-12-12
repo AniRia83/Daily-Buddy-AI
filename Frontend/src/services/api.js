@@ -1,4 +1,4 @@
-const API_BASE = "https://ai-dailybuddy-backend.onrender.com";
+const API_BASE = "https://daily-buddy-ai.onrender.com";
 
 // -------------------------------
 // Send a new journal entry
@@ -11,6 +11,7 @@ export async function sendJournalEntry(text) {
   });
 
   if (!response.ok) {
+    console.error("Backend error:", await response.text());
     throw new Error("Failed to save entry");
   }
 

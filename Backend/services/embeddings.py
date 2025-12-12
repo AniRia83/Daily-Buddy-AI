@@ -1,51 +1,60 @@
+from openai import OpenAI
 import os
 import json
 import numpy as np
-from dotenv import load_dotenv
-from openai import OpenAI
-from sklearn.metrics.pairwise import cosine_similarity
 
-load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-EMBED_FILE = "data/embeddings_index.json"
+EMBED_FILE = "data/embeddings.json"
 
+# ------------------------------
+# Load & Save embedding storage
+# ------------------------------
+def load_db():
+    try:
+        with open(EMBED_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return {}
 
-def get_embedding(text: str):
+def save_db(data):
+    with open(EMBED_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+# ------------------------------
+# Generate embedding
+# ------------------------------
+def get_embedding(text):
     response = client.embeddings.create(
         model="text-embedding-3-small",
         input=text
     )
     return response.data[0].embedding
 
+def save_embedding(entry_id, embedding):
+    db = load_db()
+    db[str(entry_id)] = embedding
+    save_db(db)
 
-def save_embedding(entry_id: int, embedding):
-    with open(EMBED_FILE, "r") as f:
-        data = json.load(f)
+# ------------------------------
+# Search similar entries
+# ------------------------------
+def cosine_similarity(v1, v2):
+    v1 = np.array(v1)
+    v2 = np.array(v2)
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
-    data.append({
-        "id": entry_id,
-        "embedding": embedding
-    })
+def search_similar(query):
+    q_emb = get_embedding(query)
+    db = load_db()
 
-    with open(EMBED_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    results = []
+    for entry_id, emb in db.items():
+        score = cosine_similarity(q_emb, emb)
+        results.append({
+            "id": entry_id,
+            "score": float(score)
+        })
 
-
-def search_similar(text: str):
-    query_emb = np.array(get_embedding(text))
-
-    with open(EMBED_FILE, "r") as f:
-        stored = json.load(f)
-
-    if not stored:
-        return []
-
-    similarities = []
-    for item in stored:
-        emb = np.array(item["embedding"])
-        score = cosine_similarity([query_emb], [emb])[0][0]
-        similarities.append((item["id"], score))
-
-    similarities.sort(key=lambda x: x[1], reverse=True)
-    return similarities[:3]  # top 3 related entries
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return results[:5]

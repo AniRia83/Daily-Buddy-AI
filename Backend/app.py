@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from services.summarizer import summarize_text
 from services.sentiment import analyze_sentiment
 from services.embeddings import get_embedding, save_embedding, search_similar
+from services.mood import analyze_mood
 
 from datetime import datetime
 
@@ -17,8 +18,12 @@ app = FastAPI()
 # -------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],      # Allow all origins (you can restrict later)
-    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://daily-buddy-ai.vercel.app",
+        "https://daily-buddy-ai.onrender.com"
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -38,12 +43,14 @@ def save_entries(data):
 # API Routes
 # -------------------------
 
+
 @app.post("/add_entry")
 def add_entry(entry: dict):
     text = entry["text"]
 
     summary = summarize_text(text)
     sentiment = analyze_sentiment(text)
+    mood_score = analyze_mood(text)
 
     entries = load_entries()
     entry_id = len(entries) + 1
@@ -53,13 +60,12 @@ def add_entry(entry: dict):
         "text": text,
         "summary": summary,
         "sentiment": sentiment,
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+        "mood": mood_score
     }
 
     entries.append(new_entry)
     save_entries(entries)
 
-    # Save embedding
     emb = get_embedding(text)
     save_embedding(entry_id, emb)
 
@@ -67,8 +73,9 @@ def add_entry(entry: dict):
         "message": "Entry added successfully!",
         "summary": summary,
         "sentiment": sentiment,
-        "date": new_entry["date"]
+        "mood": mood_score
     }
+
 
 
 @app.post("/search")
@@ -88,7 +95,7 @@ def get_entries():
 def analyze_mood():
     entries = load_entries()
 
-    # convert sentiment → numeric score
+    # convert sentiment into numeric score
     mood_map = {
         "happy": 3,
         "excited": 2,

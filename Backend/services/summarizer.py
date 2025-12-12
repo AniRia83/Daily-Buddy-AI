@@ -1,15 +1,13 @@
-import os
-from dotenv import load_dotenv
 from openai import OpenAI
+import os
 
-load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def summarize_text(text: str):
+def summarize_text(text):
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4.1-mini",
         messages=[
-            {"role": "system", "content": "Summarize the user's journal entry concisely."},
+            {"role": "system", "content": "Summarize the user's journal entry in 1–2 sentences."},
             {"role": "user", "content": text}
         ]
     )

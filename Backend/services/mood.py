@@ -3,17 +3,19 @@ import os
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def analyze_sentiment(text):
+def analyze_mood(text):
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
             {
                 "role": "system",
-                "content":
-                "Analyze the sentiment. Respond ONLY with one word: Positive, Negative, or Neutral."
+                "content": "Rate the emotional mood of this journal entry from 1 (very negative) to 10 (very positive). Respond with a single number only."
             },
             {"role": "user", "content": text}
         ]
     )
 
-    return response.choices[0].message.content.strip()
+    try:
+        return int(response.choices[0].message.content.strip())
+    except:
+        return 5
